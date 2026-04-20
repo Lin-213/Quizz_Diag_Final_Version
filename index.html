@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Diagnostic Immobilier</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --blue: #185FA5;
+      --blue-light: #E6F1FB;
+      --green: #3B6D11;
+      --green-light: #EAF3DE;
+      --red: #A32D2D;
+      --red-light: #FCEBEB;
+      --amber: #854F0B;
+      --amber-light: #FAEEDA;
+      --gray-bg: #F7F6F3;
+      --gray-border: rgba(0,0,0,0.1);
+      --text: #1a1a1a;
+      --text-muted: #666;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--gray-bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      color: var(--text);
+    }
+
+    .container { width: 100%; max-width: 620px; }
+
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      border: 0.5px solid var(--gray-border);
+      padding: 2rem;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Start screen */
+    .start-icon {
+      width: 64px; height: 64px;
+      background: var(--blue-light);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+    .start-icon svg { width: 32px; height: 32px; }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-bottom: 1.5rem;
+    }
+
+    .badges {
+      display: flex; gap: 8px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 2rem;
+    }
+
+    .badge {
+      font-size: 12px; font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+    .badge-blue { background: var(--blue-light); color: #0C447C; }
+    .badge-green { background: var(--green-light); color: var(--green); }
+    .badge-amber { background: var(--amber-light); color: var(--amber); }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { background: #0C447C; }
+    .btn-primary:active { transform: scale(0.99); }
+
+    .btn-secondary {
+      background: white;
+      border: 0.5px solid var(--gray-border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 11px 24px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: var(--gray-bg); }
+
+    /* Quiz header */
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .quiz-header span { font-size: 13px; color: var(--text-muted); }
+    .live-score { font-size: 13px; font-weight: 600; color: var(--blue); }
+
+    /* Progress bar */
+    .progress-track {
+      background: #eee;
+      border-radius: 4px;
+      height: 5px;
+      margin-bottom: 16px;
+    }
+    .progress-fill {
+      background: var(--blue);
+      height: 5px;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+
+
+    /* Question */
+    .question-text {
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+      color: var(--text);
+    }
+
+    /* Options */
+    .options { display: flex; flex-direction: column; gap: 10px; }
+
+    .option-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      border: 0.5px solid var(--gray-border);
+      border-radius: var(--radius-sm);
+      background: white;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      line-height: 1.5;
+    }
+    .option-btn:hover:not(:disabled) {
+      background: var(--gray-bg);
+      border-color: rgba(0,0,0,0.2);
+      transform: translateX(3px);
+    }
+    .option-btn:disabled { cursor: default; transform: none; }
+    .option-btn.correct {
+      background: var(--green-light);
+      border-color: var(--green);
+      color: #27500A;
+      font-weight: 500;
+    }
+    .option-btn.wrong {
+      background: var(--red-light);
+      border-color: var(--red);
+      color: #791F1F;
+    }
+    .option-btn.reveal {
+      background: var(--green-light);
+      border-color: var(--green);
+      color: #27500A;
+      opacity: 0.65;
+    }
+
+    /* Explanation */
+    .explanation {
+      background: #F7F6F3;
+      border-left: 3px solid var(--blue);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 12px 16px;
+      margin-top: 1rem;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    /* Next button row */
+    .next-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 0.5px solid var(--gray-border);
+    }
+
+    /* Results */
+    .score-ring-wrap {
+      width: 110px; height: 110px;
+      margin: 0 auto 1rem;
+    }
+
+    .result-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .result-msg {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 1.5rem;
+    }
+
+    .detail-item {
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .detail-item.ok { background: var(--green-light); }
+    .detail-item.ko { background: var(--red-light); }
+    .detail-item .icon { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    .results-scroll {
+      max-height: 320px;
+      overflow-y: auto;
+      margin-bottom: 1.5rem;
+      padding-right: 4px;
+    }
+
+    .results-footer {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- START -->
+  <div id="screen-start" class="screen card active">
+    <div class="start-icon">
+      <svg viewBox="0 0 32 32" fill="none">
+        <rect x="4" y="3" width="18" height="22" rx="3" fill="#185FA5" opacity="0.15"/>
+        <rect x="4" y="3" width="18" height="22" rx="3" stroke="#185FA5" stroke-width="1.5"/>
+        <path d="M8 9h10M8 13h10M8 17h6" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="24" cy="22" r="5" fill="#185FA5"/>
+        <path d="M21.5 22l2 2 3.5-3.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Quiz Diagnostic Immobilier</h1>
+    <p class="subtitle">Testez vos connaissances en pathologie du bâtiment</p>
+    <div class="badges">
+      <span class="badge badge-blue">6 questions</span>
+      <span class="badge badge-green">Correction immédiate</span>
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">Commencer le quiz</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="screen-quiz" class="screen card">
+    <div class="quiz-header">
+      <span>Question <span id="q-num">1</span> / 6</span>
+      <span class="live-score">Score : <span id="live-score">0</span> / 6</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress" style="width:16.6%"></div></div>
+
+
+
+    <p class="question-text" id="question-text"></p>
+    <div class="options" id="options-container"></div>
+    <div class="explanation" id="explanation" style="display:none;"></div>
+
+    <div class="next-row">
+      <button class="btn-primary" id="next-btn" onclick="nextQuestion()" style="display:none; width:auto; padding:11px 28px;">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="screen-results" class="screen card">
+    <div class="score-ring-wrap">
+      <svg viewBox="0 0 110 110" width="110" height="110">
+        <circle cx="55" cy="55" r="48" fill="none" stroke="#eee" stroke-width="8"/>
+        <circle id="score-arc" cx="55" cy="55" r="48" fill="none" stroke="#185FA5" stroke-width="8"
+          stroke-dasharray="301.6" stroke-dashoffset="301.6"
+          stroke-linecap="round" transform="rotate(-90 55 55)"
+          style="transition: stroke-dashoffset 1s ease, stroke 0.5s;"/>
+        <text x="55" y="50" text-anchor="middle" font-size="24" font-weight="600" fill="#1a1a1a" font-family="DM Sans, sans-serif" id="score-big">0</text>
+        <text x="55" y="68" text-anchor="middle" font-size="13" fill="#999" font-family="DM Sans, sans-serif">/6</text>
+      </svg>
+    </div>
+    <p class="result-title">Quiz terminé !</p>
+    <p class="result-msg" id="result-msg"></p>
+
+    <div class="results-scroll" id="detailed-results"></div>
+
+    <div class="results-footer">
+      <button class="btn-secondary" style="flex:1" onclick="restartQuiz()">↺ Recommencer</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    question: "École communale : une fissure traversante en escalier recoupe plusieurs joints et s'ouvre davantage après l'hiver. Quelle conduite initiale est la plus juste ?",
+    options: ["Reprise d'enduit puis contrôle annuel","Sécurisation si aléa, jauges/relevé et diagnostic avant réparation","Injection immédiate pour bloquer l'ouverture"],
+    correct: 1,
+    explanation: "Toute fissure évolutive impose d'abord de sécuriser les personnes, puis de poser des jauges datées et de réaliser un diagnostic structurel avant toute réparation. Réparer sans comprendre la cause masque le problème."
+  },
+  {
+    question: "Avant d'installer des archives lourdes sur un plancher de mairie, quel socle d'analyse est le plus pertinent ?",
+    options: ["Surface + année de construction + charge visée","Portées/schéma statique + matériaux/armatures + état + charges","Revêtements + cloisons + hauteur sous plafond"],
+    correct: 1,
+    explanation: "La capacité portante d'un plancher dépend de sa portée, de son mode de fonctionnement structurel, des matériaux et armatures, de son état sanitaire, et des charges effectives. Sans ces données, toute évaluation est hasardeuse."
+  },
+  {
+    question: "Sur un balcon en béton armé, quel indice évoque le plus une corrosion déjà avancée des armatures ?",
+    options: ["Sous-face encrassée mais régulière","Fissures au droit des aciers + éclats + oxydation visible","Microfissures superficielles du revêtement"],
+    correct: 1,
+    explanation: "La corrosion des armatures génère une expansion volumique qui provoque des fissures longitudinales dans l'axe des aciers, puis des éclats (épaufrures) et des coulures de rouille. Ces signes indiquent une pathologie active nécessitant intervention."
+  },
+  {
+    question: "Bâtiment ancien avec suspicion d'amiante : avant des sondages destructifs, quelle approche est la plus rigoureuse ?",
+    options: ["Sondages structurels d'abord, repérage ensuite","Repérage adapté, protections/mode opératoire, puis sondages ciblés","Aucun sondage : hypothèses conservatrices uniquement"],
+    correct: 1,
+    explanation: "La réglementation impose un repérage amiante avant tout travaux. Les sondages destructifs sans protection exposent les intervenants à des fibres. Le repérage oriente ensuite les sondages de façon ciblée et sécurisée."
+  },
+  {
+    question: "Une poutre de gymnase présente une flèche inhabituelle sans fissuration spectaculaire. Quel élément augmente le plus le niveau d'alerte ?",
+    options: ["Déformation récente/évolutive ou charges modifiées depuis l'origine","Peinture intacte et pas d'infiltration apparente","Température intérieure élevée le jour de visite"],
+    correct: 0,
+    explanation: "Une déformation évolutive ou récente, surtout si les charges ont changé (équipements, toiture, surcharge neige), traduit un état limite d'utilisation voire ultime en cours d'atteinte. L'absence de fissure n'est pas rassurante pour certains matériaux (bois, métal)."
+  },
+  {
+    question: "Pour objectiver une fissure avant/après sécheresse, quel protocole donne la lecture la plus exploitable ?",
+    options: ["Deux photos smartphone à un an d'intervalle","Jauge datée + localisation + contexte météo + comparaisons périodiques","Mesure ponctuelle au réglet par plusieurs agents"],
+    correct: 1,
+    explanation: "Un suivi rigoureux nécessite des jauges (témoins) posées à date connue, une localisation précise sur plan, la notation du contexte météo (sécheresse, pluie) et des relevés périodiques comparables. Cela permet de quantifier l'évolution et de corréler avec les saisons."
+  }
+];
+
+let idx = 0, score = 0, answered = false;
+const userAnswers = new Array(6).fill(undefined);
+
+function show(id) {
+  ['screen-start','screen-quiz','screen-results'].forEach(s =>
+    document.getElementById(s).classList.toggle('active', s === id));
+}
+
+function startQuiz() {
+  idx = 0; score = 0; answered = false;
+  userAnswers.fill(undefined);
+  show('screen-quiz');
+  loadQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+let shuffledOptions = [];
+
+function loadQuestion() {
+  answered = false;
+
+  const q = questions[idx];
+  document.getElementById('q-num').textContent = idx + 1;
+  document.getElementById('live-score').textContent = score;
+  document.getElementById('progress').style.width = ((idx + 1) / 6 * 100) + '%';
+  document.getElementById('question-text').textContent = q.question;
+  document.getElementById('explanation').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+
+  shuffledOptions = shuffle(q.options.map((text, i) => ({ text, originalIndex: i })));
+
+  const cont = document.getElementById('options-container');
+  cont.innerHTML = '';
+  shuffledOptions.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt.text;
+    btn.onclick = () => selectAnswer(i);
+    cont.appendChild(btn);
+  });
+
+}
+
+function selectAnswer(i) {
+  if (answered) return;
+  answered = true;
+  userAnswers[idx] = shuffledOptions[i].originalIndex;
+
+  const isOk = shuffledOptions[i].originalIndex === questions[idx].correct;
+  if (isOk) score++;
+
+  document.querySelectorAll('.option-btn').forEach((b, j) => {
+    b.disabled = true;
+    if (j === i && isOk) b.classList.add('correct');
+    else if (j === i) b.classList.add('wrong');
+    else if (shuffledOptions[j].originalIndex === questions[idx].correct) b.classList.add('reveal');
+  });
+
+  document.getElementById('live-score').textContent = score;
+  showExplanation(isOk, false);
+  showNextBtn();
+}
+
+function showExplanation(isOk, timeout) {
+  const el = document.getElementById('explanation');
+  el.style.display = 'block';
+  el.style.borderLeftColor = timeout ? '#854F0B' : (isOk ? '#3B6D11' : '#A32D2D');
+  el.innerHTML = (timeout ? '<strong>Temps écoulé.</strong> ' : isOk ? '<strong>Correct !</strong> ' : '<strong>Incorrect.</strong> ') + questions[idx].explanation;
+}
+
+function showNextBtn() {
+  const btn = document.getElementById('next-btn');
+  btn.style.display = 'inline-block';
+  btn.textContent = idx < 5 ? 'Suivant →' : 'Voir les résultats →';
+}
+
+function nextQuestion() {
+  if (idx < 5) { idx++; loadQuestion(); window.scrollTo(0, 0); }
+  else showResults();
+}
+
+function showResults() {
+  show('screen-results');
+  document.getElementById('score-big').textContent = score;
+
+  const msgs = [
+    'Besoin de renforcement. Étude approfondie recommandée.',
+    'À améliorer. Révision conseillée.',
+    'Bien ! Bonne compréhension du sujet.',
+    'Très bien ! Bonnes connaissances.',
+    'Excellent ! Très bonne maîtrise.',
+    'Parfait ! Maîtrise complète du diagnostic immobilier.'
+  ];
+  document.getElementById('result-msg').textContent = msgs[score] || msgs[0];
+
+  setTimeout(() => {
+    const circumference = 301.6;
+    const arc = document.getElementById('score-arc');
+    arc.style.strokeDashoffset = circumference - (score / 6) * circumference;
+    arc.style.stroke = score >= 5 ? '#639922' : score >= 3 ? '#185FA5' : '#E24B4A';
+  }, 100);
+
+  const det = document.getElementById('detailed-results');
+  det.innerHTML = '';
+  questions.forEach((q, i) => {
+    const ua = userAnswers[i];
+    const isOk = ua !== null && ua !== undefined && ua === q.correct;
+    const d = document.createElement('div');
+    d.className = 'detail-item ' + (isOk ? 'ok' : 'ko');
+    d.innerHTML = `
+      <svg class="icon" viewBox="0 0 18 18">
+        ${isOk
+          ? '<circle cx="9" cy="9" r="8" fill="#3B6D11"/><path d="M5.5 9l2.5 2.5 4.5-4.5" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+          : '<circle cx="9" cy="9" r="8" fill="#A32D2D"/><path d="M6 6l6 6M12 6l-6 6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'}
+      </svg>
+      <div>
+        <p style="font-weight:600; color:${isOk ? '#27500A' : '#791F1F'}; margin-bottom:2px;">Q${i+1}</p>
+        <p style="color:${isOk ? '#3B6D11' : '#A32D2D'}; font-size:13px;">${ua !== null && ua !== undefined ? q.options[ua] : 'Non répondue (temps écoulé)'}</p>
+        ${!isOk ? `<p style="color:#3B6D11; font-size:12px; margin-top:4px; font-style:italic;">✓ ${q.options[q.correct]}</p>` : ''}
+      </div>`;
+    det.appendChild(d);
+  });
+}
+
+function restartQuiz() {
+  show('screen-start');
+}
+</script>
+</body>
+</html>
